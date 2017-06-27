@@ -1,0 +1,4 @@
+-cp src
+-D mqtt=0.0.0
+-lib tink_core
+-lib tink_chunk
