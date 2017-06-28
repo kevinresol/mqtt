@@ -1,26 +1,40 @@
 package ;
 
+import tink.testrunner.*;
+import tink.unit.*;
+
+@:asserts
 class RunTests {
 
   static function main() {
+    Runner.run(TestBatch.make([
+      new RunTests(),
+    ])).handle(Runner.exit);
+  }
+  
+  function new() {}
+  
+  public function echo() {
     mqtt.clients.NodeClient.connect('mqtt://test.mosquitto.org')
       .handle(function(o) switch o {
         case Success(client):
+          var count = 0;
+          var topic = 'haxe-mqtt-' + Date.now().getTime();
           client.message.handle(function(m) {
-            trace(m.a, m.b.toString());
+            asserts.assert(m.a == topic);
+            asserts.assert(m.b == 'after');
+            if(++count == 3) asserts.done();
           });
-          client.publish('test', 'before');
-          client.publish('test', 'before');
-          client.publish('test', 'before');
-          client.subscribe('test');
-          client.publish('test', 'after');
-          client.publish('test', 'after');
-          client.publish('test', 'after');
+          client.publish(topic, 'before');
+          client.publish(topic, 'before');
+          client.publish(topic, 'before');
+          client.subscribe(topic);
+          client.publish(topic, 'after');
+          client.publish(topic, 'after');
+          client.publish(topic, 'after');
         case Failure(e):
-          trace(e);
+          asserts.fail(e);
       });
-    // travix.Logger.println('it works');
-    // travix.Logger.exit(0); // make sure we exit properly, which is necessary on some targets, e.g. flash & (phantom)js
+    return asserts;
   }
-  
 }
