@@ -20,9 +20,9 @@ class NodeClient implements Client {
 		client.on('message', function(topic:String, message:Buffer) messageTrigger.trigger(new Pair(topic, (message.hxToBytes():Chunk))));
 	}
 	
-	public static function connect(url:String):Promise<Client> {
+	public static function connect(url:String, ?options:{}):Promise<Client> {
 		return Future.async(function(cb) {
-			var client = NativeMqtt.connect(url);
+			var client = NativeMqtt.connect(url, options);
 			
 			var onError, onConnect;
 			
@@ -84,7 +84,7 @@ class NodeClient implements Client {
 
 @:jsRequire('mqtt')
 private extern class NativeMqtt {
-	public static function connect(url:String):NativeClient;
+	public static function connect(url:String, ?options:{}):NativeClient;
 }
 
 private extern class NativeClient extends EventEmitter<NativeClient> {
