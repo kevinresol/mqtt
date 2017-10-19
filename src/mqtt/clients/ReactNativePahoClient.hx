@@ -8,6 +8,10 @@ import haxe.io.Bytes;
 
 using tink.CoreApi;
 
+/**
+ *  A MQTT client that works on React Native
+ *  Requires the npm package 'react-native-paho-mqtt'
+ */
 class ReactNativePahoClient implements Client {
 	
 	public var message(default, null):Signal<Pair<String, Chunk>>;

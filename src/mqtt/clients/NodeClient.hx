@@ -8,6 +8,10 @@ import tink.Chunk;
 
 using tink.CoreApi;
 
+/**
+ *  A MQTT client that works on Node.js
+ *  Requires the npm package 'mqtt'
+ */
 class NodeClient implements Client {
 	
 	public var message(default, null):Signal<Pair<String, Chunk>>;
