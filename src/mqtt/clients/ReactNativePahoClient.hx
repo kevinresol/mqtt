@@ -15,7 +15,9 @@ using tink.CoreApi;
 class ReactNativePahoClient implements Client {
 	
 	public var message(default, null):Signal<Pair<String, Chunk>>;
+	public var closed(default, null):Future<Option<Error>>;
 	var messageTrigger:SignalTrigger<Pair<String, Chunk>>;
+	var closedTrigger:FutureTrigger<Option<Error>>;
 	var client:NativeClient;
 	
 	function new(client) {
@@ -25,6 +27,9 @@ class ReactNativePahoClient implements Client {
 			var chunk:Chunk = Bytes.ofData(message.payloadBytes.buffer.slice(message.payloadBytes.byteOffset));
 			messageTrigger.trigger(new Pair(message.destinationName, chunk));
 		});
+		
+		// client.once('disconnect', function(e) closedTrigger.trigger(None));
+		// client.once('error', function(e) closedTrigger.trigger(Some(toError(e))));
 	}
 	
 	public static function connect(config:{}):Promise<Client> {
@@ -64,18 +69,16 @@ class ReactNativePahoClient implements Client {
 	
 	public function close(?force:Bool):Future<Noise> {
 		return Future.async(function(cb) {
+			// client.once('disconnect', cb.bind(Noise));
 			client.disconnect();
-			cb(Noise);
 		});
 	}
 	
 	inline function asClient():Client
 		return this;
 	
-	static function toError(e:js.Error) {
-		untyped console.log(e);
+	static function toError(e:js.Error)
 		return Error.withData(500, e.message, e);
-	}
 }
 
 

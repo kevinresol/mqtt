@@ -15,13 +15,19 @@ using tink.CoreApi;
 class NodeClient implements Client {
 	
 	public var message(default, null):Signal<Pair<String, Chunk>>;
+	public var closed(default, null):Future<Option<Error>>;
 	var messageTrigger:SignalTrigger<Pair<String, Chunk>>;
+	var closedTrigger:FutureTrigger<Option<Error>>;
 	var client:NativeClient;
 	
 	function new(client) {
 		this.client = client;
 		message = messageTrigger = Signal.trigger();
+		closed = closedTrigger = Future.trigger();
 		client.on('message', function(topic:String, message:Buffer) messageTrigger.trigger(new Pair(topic, (message.hxToBytes():Chunk))));
+		
+		// client.once('disconnect', function(e) closedTrigger.trigger(None));
+		// client.once('error', function(e) closedTrigger.trigger(Some(toError(e))));
 	}
 	
 	public static function connect(url:String, ?options:{}):Promise<Client> {
@@ -74,7 +80,10 @@ class NodeClient implements Client {
 	
 	public function close(?force:Bool):Future<Noise> {
 		return Future.async(function(cb) {
-			client.end(force, cb.bind(Noise));
+			client.end(force, function() {
+				cb(Noise);
+				closedTrigger.trigger(None);
+			});
 		});
 	}
 	
