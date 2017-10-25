@@ -16,38 +16,41 @@ using tink.CoreApi;
 class NodeClient extends BaseClient {
 	
 	var native:NativeClient;
-	var url:String;
-	var options:{}
-	
-	public function new(url:String, ?options:{}) {
-		super();
-		this.url = url;
-		this.options = options;
-	}
 	
 	override function connect():Promise<Noise> {
 		return Future.async(function(cb) {
-			native = NativeMqtt.connect(url, options);
-			
-			var onError, onConnect;
-			
-			onError = function(err) {
-				cb(Failure(toError(err)));
-				native.removeListener('connect', onConnect);
-			}
-			
-			onConnect = function() {
-				cb(Success(Noise));
-				isConnectedState.set(true);
-				native.removeListener('error', onError);
-			}
-			
-			native.once('error', onError);
-			native.once('connect', onConnect);
-			
-			native.on('message', function(topic:String, message:Buffer) messageTrigger.trigger(new Pair(topic, (message.hxToBytes():Chunk))));
-			native.on('close', isConnectedState.set.bind(false));
-			native.on('error', function(e) errorTrigger.trigger(toError(e)));
+			getConfig().handle(function(o) switch o {
+				case Success(config):
+					native = NativeMqtt.connect(config.uri, {
+						clientId: config.clientId,
+						protocolVersion: config.version,
+						connectTimeout: config.connectTimeoutMs,
+						username: config.username,
+						password: config.password,
+					});
+					
+					var onError, onConnect;
+					
+					onError = function(err) {
+						cb(Failure(toError(err)));
+						native.removeListener('connect', onConnect);
+					}
+					
+					onConnect = function() {
+						cb(Success(Noise));
+						isConnectedState.set(true);
+						native.removeListener('error', onError);
+					}
+					
+					native.once('error', onError);
+					native.once('connect', onConnect);
+					
+					native.on('message', function(topic:String, message:Buffer) messageTrigger.trigger(new Pair(topic, (message.hxToBytes():Chunk))));
+					native.on('close', isConnectedState.set.bind(false));
+					native.on('error', function(e) errorTrigger.trigger(toError(e)));
+					
+				case Failure(e):
+			});
 		});
 	}
 	

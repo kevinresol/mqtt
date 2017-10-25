@@ -3,3 +3,4 @@
 -lib tink_core
 -lib tink_chunk
 -lib tink_state
+-lib tink_url

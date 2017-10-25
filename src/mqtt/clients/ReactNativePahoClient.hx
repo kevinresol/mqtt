@@ -7,6 +7,7 @@ import tink.Chunk;
 import haxe.io.Bytes;
 import tink.state.*;
 
+using StringTools;
 using tink.CoreApi;
 
 /**
@@ -16,33 +17,45 @@ using tink.CoreApi;
 class ReactNativePahoClient extends BaseClient {
 	
 	var client:NativeClient;
-	var config:{};
-	
-	public function new(config) {
-		super();
-		this.config = config;
-	}
 	
 	override function connect():Promise<Noise> {
 		return Future.async(function(cb) {
-			client = new NativeClient(config);
-			
-			client.connect(config)	
-				.then(function(_) {
-					isConnectedState.set(true);
-					client.on('messageReceived', function(message:{destinationName:String, payloadBytes:js.html.Uint8Array}) {
-						var chunk:Chunk = Bytes.ofData(message.payloadBytes.buffer.slice(message.payloadBytes.byteOffset));
-						messageTrigger.trigger(new Pair(message.destinationName, chunk));
+			getConfig().handle(function(o) switch o {
+				case Success(config):
+					client = new NativeClient({
+						uri: config.uri,
+						clientId: config.clientId,
+						storage: react.native.api.AsyncStorage,
 					});
 					
-					client.on('connectionLost', function(e) {
-						js.Browser.console.log('lost', e);
-					});
-					client.on('connectionLost', isConnectedState.set.bind(false));
-					client.on('error', function(e) errorTrigger.trigger(Error.ofJsError(e)));
-					cb(Success(Noise));
-				})
-				.catchError(function(e) cb(Failure(Error.ofJsError(e))));
+					client.connect({
+						useSSL: switch config.uri.scheme {
+							case 'wss' | 'mqtts': true;
+							default: false;
+						},
+						timeout: config.connectTimeoutMs / 1000,
+						mqttVersion: config.version,
+						username: config.username,
+						password: config.password,
+					})	
+						.then(function(_) {
+							isConnectedState.set(true);
+							client.on('messageReceived', function(message:{destinationName:String, payloadBytes:js.html.Uint8Array}) {
+								var chunk:Chunk = Bytes.ofData(message.payloadBytes.buffer.slice(message.payloadBytes.byteOffset));
+								messageTrigger.trigger(new Pair(message.destinationName, chunk));
+							});
+							
+							client.on('connectionLost', function(e) {
+								js.Browser.console.log('lost', e);
+							});
+							client.on('connectionLost', isConnectedState.set.bind(false));
+							client.on('error', function(e) errorTrigger.trigger(Error.ofJsError(e)));
+							cb(Success(Noise));
+						})
+						.catchError(function(e) cb(Failure(Error.ofJsError(e))));
+				case Failure(e):
+					cb(Failure(e));
+			})
 		}, false);
 	}
 	

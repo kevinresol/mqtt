@@ -1,8 +1,10 @@
 package mqtt;
 
-using tink.CoreApi;
 import tink.state.*;
 import tink.Chunk;
+import mqtt.Config;
+
+using tink.CoreApi;
 
 interface Client {
 	var message(default, null):Signal<Pair<String, Chunk>>;
@@ -19,11 +21,13 @@ class BaseClient implements Client {
 	public var message(default, null):Signal<Pair<String, Chunk>>;
 	public var error(default, null):Signal<Error>;
 	public var isConnected(default, null):Observable<Bool>;
-	var messageTrigger(default, null):SignalTrigger<Pair<String, Chunk>>;
-	var errorTrigger(default, null):SignalTrigger<Error>;
-	var isConnectedState(default, null):State<Bool>;
+	var messageTrigger:SignalTrigger<Pair<String, Chunk>>;
+	var errorTrigger:SignalTrigger<Error>;
+	var isConnectedState:State<Bool>;
+	var getConfig:ConfigGenerator;
 	
-	public function new() {
+	public function new(getConfig) {
+		this.getConfig = getConfig;
 		message = messageTrigger = Signal.trigger();
 		error = errorTrigger = Signal.trigger();
 		isConnected = isConnectedState = new State(false);

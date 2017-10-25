@@ -2,6 +2,9 @@ package ;
 
 import tink.testrunner.*;
 import tink.unit.*;
+import mqtt.clients.*;
+
+using tink.CoreApi;
 
 @:asserts
 class RunTests {
@@ -15,7 +18,8 @@ class RunTests {
   function new() {}
   
   public function echo() {
-    var client = new mqtt.clients.NodeClient('mqtt://test.mosquitto.org');
+    // var client = new KeepAliveClient('mqtt://test.mosquitto.org', NodeClient.new);
+    var client = new NodeClient('mqtt://test.mosquitto.org');
     client.connect()
       .handle(function(o) switch o {
         case Success(_):

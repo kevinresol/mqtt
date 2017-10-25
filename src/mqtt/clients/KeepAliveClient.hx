@@ -1,83 +1,84 @@
 package mqtt.clients;
 
 import haxe.Timer;
+import mqtt.Client;
+import mqtt.Config;
+import tink.Chunk;
 
-using tink.state.*;
 using tink.CoreApi;
 
-class KeepAliveClient implements Client {
+class KeepAliveClient extends BaseClient {
 	
-	var subscriptions:Array<Subscription>;
+	var subscriptions:Array<Subscription> = [];
+	var clientFactory:ConfigGenerator->Client;
 	var client:Client;
-	var connect:Void->Promise<Client>;
 	
+	public function new(getConfig, clientFactory) {
+		super(getConfig);
+		this.clientFactory = clientFactory;
+	}
 	
-	public var message(default, null):Signal<Pair<String, Chunk>>;
-	public var error(default, null):Signal<Error>;
-	public var isConnected(default, null):Observable<Bool>;
-	
-	public var messageTrigger(default, null):SignalTrigger<Pair<String, Chunk>>;
-	public var errorTrigger(default, null):SignalTrigger<Error>;
-	public var isConnectedState(default, null):State<Bool>;
-	
-	
-	public function new(connect:Void->Promise<Client>) {
-		topics = [];
-		message = messageTrigger = Signal.trigger();
-		error = errorTrigger = Signal.trigger();
-		isConnected = (isConnectedState = new State(false)).observe();
-		
-		this.connect = connect;
-		
-		tryConnect();
+	override function connect():Promise<Noise> {
+		if(client != null && client.isConnected.value) return new Error('Already connected');
+		client = clientFactory(getConfig);
+		return tryConnect();
 	}
 	
 	var link:CallbackLink;
-	function tryConnect(delay = 10) {
-		connect().handle(function(o) switch o {
-			case Success(client):
-				this.client = client;
-				for(sub in subscriptions) switch sub {
-					case Subscribe(topic, options): client.subscribe(topic, options);
-					case Unsubscribe(topic): client.unsubscribe(topic);
-				}
-				if(link != null) link.dissolve();
-				link = client.isConnected.bind(isConnectedState.set)
-					&& client.message.handle(messageTrigger.trigger)
-					&& client.error.handle(errorTrigger.trigger);
-				client.isConnected.nextTime(function(v) return !v)
-					.handle(tryConnect);
-				
-			case Failure(e):
-				errorTrigger.trigger(e);
-				Timer.delay(tryConnect.bind(delay *= 2), delay);
+	function tryConnect(delay = 10):Promise<Noise> {
+		return client.connect().map(function(o) {
+			switch o {
+				case Success(_):
+					if(link != null) link.dissolve();
+					link = client.isConnected.bind(isConnectedState.set)
+						& client.message.handle(messageTrigger.trigger)
+						& client.error.handle(errorTrigger.trigger);
+					
+					for(sub in subscriptions) switch sub {
+						case Subscribe(topic, options): client.subscribe(topic, options);
+						case Unsubscribe(topic): client.unsubscribe(topic);
+					}
+					
+					client.isConnected.nextTime(function(v) return !v)
+						.handle(function(_) {
+							client = clientFactory(getConfig);
+							tryConnect().eager();
+						});
+					
+				case Failure(e):
+					errorTrigger.trigger(e);
+					var nextDelay = delay *= 2;
+					if(nextDelay > 60000) nextDelay = 60000;
+					Timer.delay(tryConnect.bind(nextDelay), delay);
+			}
+			return o;
 		});
 	}
 	
-	public function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
+	override function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
 		return Future.async(function(cb) {
-			subscriptions.push(Subsribe(topic, options));
+			subscriptions.push(Subscribe(topic, options));
 			whenConnected(function() client.subscribe(topic, options).handle(cb));
-		});
+		}, false);
 	}
 	
-	public function unsubscribe(topic:String):Promise<Noise> {
+	override function unsubscribe(topic:String):Promise<Noise> {
 		return Future.async(function(cb) {
 			subscriptions.remove(Unsubscribe(topic));
 			whenConnected(function() client.unsubscribe(topic).handle(cb));
-		});
+		}, false);
 	}
 	
-	public function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
+	override function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
 		return Future.async(function(cb) {
 			whenConnected(function() client.publish(topic, message, options).handle(cb));
-		});
+		}, false);
 	}
 	
-	public function close(?force:Bool):Future<Noise> {
+	override function close(?force:Bool):Future<Noise> {
 		return Future.async(function(cb) {
 			whenConnected(function() client.close(force).handle(cb));
-		});
+		}, false);
 	}
 	
 	function whenConnected(f:Void->Void) {
