@@ -4,6 +4,7 @@ import js.node.events.EventEmitter;
 import js.node.Buffer;
 import mqtt.*;
 import mqtt.Client;
+import tink.state.*;
 import tink.Chunk;
 
 using tink.CoreApi;
@@ -12,60 +13,59 @@ using tink.CoreApi;
  *  A MQTT client that works on Node.js
  *  Requires the npm package 'mqtt'
  */
-class NodeClient implements Client {
+class NodeClient extends BaseClient {
 	
-	public var message(default, null):Signal<Pair<String, Chunk>>;
-	public var closed(default, null):Future<Option<Error>>;
-	var messageTrigger:SignalTrigger<Pair<String, Chunk>>;
-	var closedTrigger:FutureTrigger<Option<Error>>;
-	var client:NativeClient;
+	var native:NativeClient;
+	var url:String;
+	var options:{}
 	
-	function new(client) {
-		this.client = client;
-		message = messageTrigger = Signal.trigger();
-		closed = closedTrigger = Future.trigger();
-		client.on('message', function(topic:String, message:Buffer) messageTrigger.trigger(new Pair(topic, (message.hxToBytes():Chunk))));
-		
-		// client.once('disconnect', function(e) closedTrigger.trigger(None));
-		// client.once('error', function(e) closedTrigger.trigger(Some(toError(e))));
+	public function new(url:String, ?options:{}) {
+		super();
+		this.url = url;
+		this.options = options;
 	}
 	
-	public static function connect(url:String, ?options:{}):Promise<Client> {
+	override function connect():Promise<Noise> {
 		return Future.async(function(cb) {
-			var client = NativeMqtt.connect(url, options);
+			native = NativeMqtt.connect(url, options);
 			
 			var onError, onConnect;
 			
 			onError = function(err) {
 				cb(Failure(toError(err)));
-				client.removeListener('connect', onConnect);
+				native.removeListener('connect', onConnect);
 			}
 			
 			onConnect = function() {
-				cb(Success(new NodeClient(client).asClient()));
-				client.removeListener('error', onError);
+				cb(Success(Noise));
+				isConnectedState.set(true);
+				native.removeListener('error', onError);
 			}
 			
-			client.once('error', onError);
-			client.once('connect', onConnect);
+			native.once('error', onError);
+			native.once('connect', onConnect);
+			
+			native.on('message', function(topic:String, message:Buffer) messageTrigger.trigger(new Pair(topic, (message.hxToBytes():Chunk))));
+			native.on('close', isConnectedState.set.bind(false));
+			native.on('error', function(e) errorTrigger.trigger(toError(e)));
 		});
 	}
 	
-	public function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
+	override function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
 		return Future.async(function(cb) {
-			client.subscribe(topic, options, function(err, granted) cb(err == null ? Success(granted.qos) : Failure(toError(err))));
+			native.subscribe(topic, options, function(err, granted) cb(err == null ? Success(granted.qos) : Failure(toError(err))));
 		});
 	}
 	
-	public function unsubscribe(topic:String):Promise<Noise> {
+	override function unsubscribe(topic:String):Promise<Noise> {
 		return Future.async(function(cb) {
-			client.unsubscribe(topic, cb.bind(Success(Noise)));
+			native.unsubscribe(topic, cb.bind(Success(Noise)));
 		});
 	}
 	
-	public function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
+	override function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
 		return Future.async(function(cb) {
-			client.publish(
+			native.publish(
 				topic,
 				Buffer.hxFromBytes(message.toBytes()),
 				options == null ? null : {
@@ -78,17 +78,11 @@ class NodeClient implements Client {
 		});
 	}
 	
-	public function close(?force:Bool):Future<Noise> {
+	override function close(?force:Bool):Future<Noise> {
 		return Future.async(function(cb) {
-			client.end(force, function() {
-				cb(Noise);
-				closedTrigger.trigger(None);
-			});
+			native.end(force, cb.bind(Noise));
 		});
 	}
-	
-	inline function asClient():Client
-		return this;
 	
 	static function toError(e:js.Error)
 		return Error.withData(500, e.message, e);

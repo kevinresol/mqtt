@@ -5,6 +5,7 @@ import mqtt.Client;
 import haxe.Constraints;
 import tink.Chunk;
 import haxe.io.Bytes;
+import tink.state.*;
 
 using tink.CoreApi;
 
@@ -12,73 +13,69 @@ using tink.CoreApi;
  *  A MQTT client that works on React Native
  *  Requires the npm package 'react-native-paho-mqtt'
  */
-class ReactNativePahoClient implements Client {
+class ReactNativePahoClient extends BaseClient {
 	
-	public var message(default, null):Signal<Pair<String, Chunk>>;
-	public var closed(default, null):Future<Option<Error>>;
-	var messageTrigger:SignalTrigger<Pair<String, Chunk>>;
-	var closedTrigger:FutureTrigger<Option<Error>>;
 	var client:NativeClient;
+	var config:{};
 	
-	function new(client) {
-		this.client = client;
-		message = messageTrigger = Signal.trigger();
-		client.on('messageReceived', function(message:{destinationName:String, payloadBytes:js.html.Uint8Array}) {
-			var chunk:Chunk = Bytes.ofData(message.payloadBytes.buffer.slice(message.payloadBytes.byteOffset));
-			messageTrigger.trigger(new Pair(message.destinationName, chunk));
-		});
-		
-		// client.once('disconnect', function(e) closedTrigger.trigger(None));
-		// client.once('error', function(e) closedTrigger.trigger(Some(toError(e))));
+	public function new(config) {
+		super();
+		this.config = config;
 	}
 	
-	public static function connect(config:{}):Promise<Client> {
+	override function connect():Promise<Noise> {
 		return Future.async(function(cb) {
-			var client = new NativeClient(config);
+			client = new NativeClient(config);
 			
 			client.connect(config)	
-				.then(function(_) cb(Success(new ReactNativePahoClient(client).asClient())))
-				.catchError(function(e) cb(Failure(toError(e))));
-		});
+				.then(function(_) {
+					isConnectedState.set(true);
+					client.on('messageReceived', function(message:{destinationName:String, payloadBytes:js.html.Uint8Array}) {
+						var chunk:Chunk = Bytes.ofData(message.payloadBytes.buffer.slice(message.payloadBytes.byteOffset));
+						messageTrigger.trigger(new Pair(message.destinationName, chunk));
+					});
+					
+					client.on('connectionLost', function(e) {
+						js.Browser.console.log('lost', e);
+					});
+					client.on('connectionLost', isConnectedState.set.bind(false));
+					client.on('error', function(e) errorTrigger.trigger(Error.ofJsError(e)));
+					cb(Success(Noise));
+				})
+				.catchError(function(e) cb(Failure(Error.ofJsError(e))));
+		}, false);
 	}
 	
-	public function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
+	override function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
 		return Future.async(function(cb) {
 			client.subscribe(topic, options)
 				.then(function(o) cb(Success(o.grantedQos)))
-				.catchError(function(e) cb(Failure(toError(e))));
-		});
+				.catchError(function(e) cb(Failure(Error.ofJsError(e))));
+		}, false);
 	}
 	
-	public function unsubscribe(topic:String):Promise<Noise> {
+	override function unsubscribe(topic:String):Promise<Noise> {
 		return Future.async(function(cb) {
 			client.unsubscribe(topic)
 				.then(function(_) cb(Success(Noise)))
-				.catchError(function(e) cb(Failure(toError(e))));
-		});
+				.catchError(function(e) cb(Failure(Error.ofJsError(e))));
+		}, false);
 	}
 	
-	public function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
+	override function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
 		return Future.async(function(cb) {
 			var msg = new NativeMessage(new js.html.Int8Array(message.toBytes().getData()));
 			msg.destinationName = topic;
 			client.send(msg);
 			cb(Success(Noise));
-		});
+		}, false);
 	}
 	
-	public function close(?force:Bool):Future<Noise> {
+	override function close(?force:Bool):Future<Noise> {
 		return Future.async(function(cb) {
-			// client.once('disconnect', cb.bind(Noise));
 			client.disconnect();
-		});
+		}, false);
 	}
-	
-	inline function asClient():Client
-		return this;
-	
-	static function toError(e:js.Error)
-		return Error.withData(500, e.message, e);
 }
 
 

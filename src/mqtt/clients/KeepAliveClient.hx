@@ -48,7 +48,7 @@ class KeepAliveClient implements Client {
 				client.isConnected.nextTime(function(v) return !v)
 					.handle(tryConnect);
 				
-			case Failure(e): 
+			case Failure(e):
 				errorTrigger.trigger(e);
 				Timer.delay(tryConnect.bind(delay *= 2), delay);
 		});

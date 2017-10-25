@@ -13,6 +13,7 @@
   "version": "0.0.0",
   "dependencies": {
     "tink_core": "",
+    "tink_state": "",
     "tink_chunk": ""
   }
 }

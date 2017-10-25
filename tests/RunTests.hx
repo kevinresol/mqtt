@@ -15,9 +15,10 @@ class RunTests {
   function new() {}
   
   public function echo() {
-    mqtt.clients.NodeClient.connect('mqtt://test.mosquitto.org')
+    var client = new mqtt.clients.NodeClient('mqtt://test.mosquitto.org');
+    client.connect()
       .handle(function(o) switch o {
-        case Success(client):
+        case Success(_):
           var count = 0;
           var topic = 'haxe-mqtt-' + Date.now().getTime();
           client.message.handle(function(m) {
