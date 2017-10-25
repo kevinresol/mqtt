@@ -25,7 +25,7 @@ class ReactNativePahoClient extends BaseClient {
 					client = new NativeClient({
 						uri: config.uri,
 						clientId: config.clientId,
-						storage: react.native.api.AsyncStorage,
+						storage: new Storage(),
 					});
 					
 					client.connect({
@@ -37,6 +37,7 @@ class ReactNativePahoClient extends BaseClient {
 						mqttVersion: config.version,
 						username: config.username,
 						password: config.password,
+						reconnect: false,
 					})	
 						.then(function(_) {
 							isConnectedState.set(true);
@@ -55,7 +56,7 @@ class ReactNativePahoClient extends BaseClient {
 						.catchError(function(e) cb(Failure(Error.ofJsError(e))));
 				case Failure(e):
 					cb(Failure(e));
-			})
+			});
 		}, false);
 	}
 	
@@ -106,4 +107,12 @@ private extern class NativeClient {
 private extern class NativeMessage {
 	var destinationName:String;
 	function new(message:js.html.Int8Array);
+}
+
+class Storage {
+	var map:Map<String, Dynamic> = new Map();
+	public function new() {}
+	public function setItem(key, item) map.set(key, item);
+	public function getItem(key) return map.get(key);
+	public function removeItem(key) map.remove(key);
 }

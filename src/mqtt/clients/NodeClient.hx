@@ -27,6 +27,7 @@ class NodeClient extends BaseClient {
 						connectTimeout: config.connectTimeoutMs,
 						username: config.username,
 						password: config.password,
+						reconnectPeriod: 0, // don't reconnect
 					});
 					
 					var onError, onConnect;

@@ -18,6 +18,7 @@ class RunTests {
   function new() {}
   
   public function echo() {
+    ReactNativePahoClient;
     // var client = new KeepAliveClient('mqtt://test.mosquitto.org', NodeClient.new);
     var client = new NodeClient('mqtt://test.mosquitto.org');
     client.connect()

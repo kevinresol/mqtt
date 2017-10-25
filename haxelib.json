@@ -14,6 +14,7 @@
   "dependencies": {
     "tink_core": "",
     "tink_state": "",
+    "tink_url": "",
     "tink_chunk": ""
   }
 }
