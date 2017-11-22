@@ -11,6 +11,7 @@ typedef Config = {
 	?connectTimeoutMs:Int,
 	?username:String,
 	?password:String,
+	?topics:Array<String>,
 }
 
 @:enum abstract Version(Int) to Int {

@@ -50,6 +50,7 @@ class JsClient extends BaseClient {
 						isConnectedState.set(true);
 						native.removeListener('error', onError);
 						native.removeListener('close', onClose);
+						if(config.topics != null) for(topic in config.topics) subscribe(topic);
 					}
 					
 					native.once('error', onError);
@@ -76,13 +77,13 @@ class JsClient extends BaseClient {
 	override function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
 		return Future.async(function(cb) {
 			native.subscribe(topic, options, function(err, granted) cb(err == null ? Success(granted.qos) : Failure(toError(err))));
-		});
+		}, false);
 	}
 	
 	override function unsubscribe(topic:String):Promise<Noise> {
 		return Future.async(function(cb) {
 			native.unsubscribe(topic, cb.bind(Success(Noise)));
-		});
+		}, false);
 	}
 	
 	override function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
@@ -101,13 +102,13 @@ class JsClient extends BaseClient {
 				}, 
 				function(err) cb(err == null ? Success(Noise) : Failure(toError(err)))
 			);
-		});
+		}, false);
 	}
 	
 	override function close(?force:Bool):Future<Noise> {
 		return Future.async(function(cb) {
 			native.end(force, cb.bind(Noise));
-		});
+		}, false);
 	}
 	
 	static function toError(e:js.Error)
