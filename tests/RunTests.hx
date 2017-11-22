@@ -9,7 +9,7 @@ import mqtt.clients.*;
 using tink.CoreApi;
 
 @:asserts
-@:timeout(8000)
+@:timeout(600000)
 class RunTests {
 
   static function main() {
@@ -96,11 +96,12 @@ class RunTests {
       return asserts;
   }
   
+  @:include
   public function retry() {
     runBroker()
       .handle(function(o) switch o {
         case Success(broker):
-          var client = new KeepAliveClient('mqtt://test.mosquitto.org', NodeClient.new);
+          var client = new KeepAliveClient('mqtt://localhost', NodeClient.new);
           client.connect()
             .handle(function(o) switch o {
               case Success(_):
@@ -119,6 +120,7 @@ class RunTests {
                 client.subscribe(topic);
                 client.publish(topic, 'after');
                 runBroker().handle(function(_) {
+                  trace('broker up');
                   client.publish(topic, 'after');
                   client.publish(topic, 'after');
                 });

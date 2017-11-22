@@ -1,0 +1,5 @@
+-cp tests
+-js bin/js/index.js
+-main Playground
+
+-lib mqtt
