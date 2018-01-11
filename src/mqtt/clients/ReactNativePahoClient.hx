@@ -23,7 +23,7 @@ class ReactNativePahoClient extends BaseClient {
 			getConfig().handle(function(o) switch o {
 				case Success(config):
 					client = new NativeClient({
-						uri: config.uri,
+						uri: config.uri.toString(),
 						clientId: config.clientId,
 						storage: new Storage(),
 					});

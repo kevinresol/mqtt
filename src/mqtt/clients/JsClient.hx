@@ -22,7 +22,7 @@ class JsClient extends BaseClient {
 		return Future.async(function(cb) {
 			getConfig().handle(function(o) switch o {
 				case Success(config):
-					native = NativeMqtt.connect(config.uri, {
+					native = NativeMqtt.connect(config.uri.toString(), {
 						clientId: config.clientId,
 						protocolVersion: config.version,
 						connectTimeout: config.connectTimeoutMs,
