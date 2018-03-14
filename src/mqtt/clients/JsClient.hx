@@ -33,8 +33,8 @@ class JsClient extends BaseClient {
 					
 					var onClose, onError, onConnect;
 					
-					onClose = function(err) {
-						cb(Failure(toError(err)));
+					onClose = function() {
+						cb(Failure(new Error('socket closed unexpectedly')));
 						native.removeListener('error', onError);
 						native.removeListener('connect', onConnect);
 					}
