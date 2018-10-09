@@ -23,9 +23,19 @@ typedef Config = {
 abstract ConfigGenerator(Void->Promise<Config>) from Void->Promise<Config> to Void->Promise<Config> {
 	@:from
 	public static inline function fromString(url:String):ConfigGenerator
-		return function():Promise<Config> return {uri: Url.parse(url)};
+		return fromUrl(url);
 	
 	@:from
-	public static inline function fromUrl(url:Url):ConfigGenerator
-		return function():Promise<Config> return {uri: url};
+	public static function fromUrl(url:Url):ConfigGenerator
+		return function():Promise<Config> return {
+			uri: Url.make({ // re-make the url without auth
+				path: url.path,
+				query: url.query,
+				host: url.host,
+				scheme: url.scheme,
+				hash: url.hash,
+			}),
+			username: url.auth == null ? null : url.auth.user,
+			password: url.auth == null ? null : url.auth.password,
+		};
 }
