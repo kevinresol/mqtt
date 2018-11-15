@@ -7,7 +7,7 @@ import mqtt.Config;
 using tink.CoreApi;
 
 interface Client {
-	var message(default, null):Signal<Pair<String, Chunk>>;
+	var message(default, null):Signal<Message>;
 	var error(default, null):Signal<Error>;
 	var isConnected(default, null):Observable<Bool>;
 	function connect():Promise<Noise>;
@@ -18,10 +18,10 @@ interface Client {
 }
 
 class BaseClient implements Client {
-	public var message(default, null):Signal<Pair<String, Chunk>>;
+	public var message(default, null):Signal<Message>;
 	public var error(default, null):Signal<Error>;
 	public var isConnected(default, null):Observable<Bool>;
-	var messageTrigger:SignalTrigger<Pair<String, Chunk>>;
+	var messageTrigger:SignalTrigger<Message>;
 	var errorTrigger:SignalTrigger<Error>;
 	var isConnectedState:State<Bool>;
 	var getConfig:ConfigGenerator;
@@ -42,12 +42,3 @@ class BaseClient implements Client {
 	inline function asClient():Client return this;
 }
 
-typedef SubscribeOptions = {
-	?qos:QoS,
-}
-
-typedef PublishOptions = {
-	?qos:QoS,
-	?retain:Bool,
-	?duplicate:Bool,
-}

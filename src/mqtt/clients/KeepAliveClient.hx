@@ -26,7 +26,6 @@ class KeepAliveClient extends BaseClient {
 	
 	var link:CallbackLink;
 	function tryConnect(delay = 10):Promise<Noise> {
-		trace('try connect');
 		return client.connect().map(function(o) {
 			switch o {
 				case Success(_):
@@ -40,7 +39,6 @@ class KeepAliveClient extends BaseClient {
 						case Unsubscribe(topic): client.unsubscribe(topic);
 					}
 					
-					client.isConnected.bind(function(v) trace('isconnected $v'));
 					client.isConnected.nextTime(function(v) return !v)
 						.handle(function(_) {
 							client = clientFactory(getConfig);

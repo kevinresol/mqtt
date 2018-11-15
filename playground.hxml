@@ -1,5 +1,6 @@
 -cp tests
--js bin/js/index.js
+-js bin/node/index.js
 -main Playground
 
 -lib mqtt
+-lib hxnodejs
