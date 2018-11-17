@@ -132,7 +132,6 @@ class RunTests {
                 client.subscribe(topic);
                 client.publish(topic, 'after');
                 runBroker().handle(function(_) {
-                  trace('broker up');
                   client.publish(topic, 'after');
                   client.publish(topic, 'after');
                 });

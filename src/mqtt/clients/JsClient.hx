@@ -76,7 +76,7 @@ class JsClient extends BaseClient {
 	
 	override function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
 		return Future.async(function(cb) {
-			native.subscribe(topic, options, function(err, granted) cb(err == null ? Success(granted.qos) : Failure(toError(err))));
+			native.subscribe(topic, options, function(err, granted) cb(err == null ? Success(granted[0].qos) : Failure(toError(err))));
 		}, false);
 	}
 	
@@ -130,7 +130,7 @@ private extern class NativeClient {
 	function once(event:String, f:Function):Void;
 	function removeListener(event:String, f:Function):Void;
 	function publish(topic:String, message:Message, ?options:{}, ?callback:js.Error->Void):Void;
-	function subscribe(topic:String, ?options:{}, ?callback:js.Error->{qos:QoS}->Void):Void;
+	function subscribe(topic:String, ?options:{}, ?callback:js.Error->Array<{topic:String, qos:QoS}>->Void):Void;
 	function unsubscribe(topic:String, ?callback:Void->Void):Void;
 	function end(force:Bool, ?callback:Void->Void):Void;
 }
