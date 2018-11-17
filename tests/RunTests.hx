@@ -62,6 +62,19 @@ class RunTests {
       });
   }
   
+  public function match() {
+		asserts.assert(mqtt.Mqtt.match('test/foo/bar', 'test/+/bar'));
+		asserts.assert(mqtt.Mqtt.match('test/foo/bar', 'test/foo/bar'));
+		asserts.assert(mqtt.Mqtt.match('test/foo/bar', 'test/#'));
+		asserts.assert(mqtt.Mqtt.match('test/foo/bar/baz', 'test/+/#'));
+		asserts.assert(mqtt.Mqtt.match('test/foo/bar/baz', 'test/+/+/baz'));
+		asserts.assert(mqtt.Mqtt.match('test', 'test/#'));
+		asserts.assert(mqtt.Mqtt.match('test/', 'test/#'));
+		asserts.assert(!mqtt.Mqtt.match('test/foo/bar', 'test/+'));
+		asserts.assert(!mqtt.Mqtt.match('test/foo/bar', 'test/nope/bar'));
+    return asserts.done();
+  }
+  
   public function echo() {
     runBroker()
       .handle(function(o) switch o {
@@ -96,7 +109,6 @@ class RunTests {
       return asserts;
   }
   
-  @:include
   public function retry() {
     runBroker()
       .handle(function(o) switch o {
