@@ -64,7 +64,7 @@ class KeepAliveClient extends BaseClient {
 	
 	override function unsubscribe(topic:String):Promise<Noise> {
 		return Future.async(function(cb) {
-			subscriptions.remove(Unsubscribe(topic));
+			subscriptions.push(Unsubscribe(topic));
 			whenConnected(function() client.unsubscribe(topic).handle(cb));
 		}, false);
 	}
