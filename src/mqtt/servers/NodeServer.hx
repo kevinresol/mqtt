@@ -14,6 +14,9 @@ class NodeServer implements Server {
 	public function new(?opt) {
 		server = new MoscaServer(opt);
 		
+		if(opt != null && (cast opt).http != null)
+			server.attachHttpServer((cast opt).http);
+		
 		messageReceived = Signal.generate(function(trigger) {
 			server.on('published', function(message:Dynamic, client) {
 				var chunk = Std.is(message.payload, String) ? Chunk.ofString(message.payload) : Chunk.ofBuffer(message.payload);
@@ -69,6 +72,7 @@ extern class MoscaServer extends js.node.events.EventEmitter<MoscaServer> {
 	function new(?opt:{});
 	function close(cb:Void->Void):Void;
 	function publish(opt:{}):Void;
+	function attachHttpServer(server:js.node.http.Server):Void;
 }
 
 extern class MoscaClient extends js.node.events.EventEmitter<MoscaClient> {
