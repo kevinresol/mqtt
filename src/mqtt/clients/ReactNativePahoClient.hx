@@ -79,7 +79,7 @@ class ReactNativePahoClient extends BaseClient {
 	
 	override function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
 		return Future.async(function(cb) {
-			var msg = new NativeMessage(new js.html.Int8Array(message.toBytes().getData()));
+			var msg = new NativeMessage(new js.html.Uint8Array(message.toBytes().getData()));
 			msg.destinationName = topic;
 			client.send(msg);
 			cb(Success(Noise));
@@ -107,7 +107,7 @@ private extern class NativeClient {
 @:jsRequire('react-native-paho-mqtt', 'Message')
 private extern class NativeMessage {
 	var destinationName:String;
-	function new(message:js.html.Int8Array);
+	function new(message:js.html.Uint8Array);
 }
 
 class Storage {
