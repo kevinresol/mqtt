@@ -138,4 +138,4 @@ private extern class NativeClient {
 	function end(force:Bool, ?callback:Void->Void):Void;
 }
 
-typedef Message = #if nodejs js.node.Buffer #else js.html.Uint8Array #end;
+typedef Message = #if nodejs js.node.Buffer #elseif haxe4 js.lib.Uint8Array #else js.html.Uint8Array #end;
