@@ -11,6 +11,9 @@ typedef Config = {
 	?connectTimeoutMs:Int,
 	?username:String,
 	?password:String,
+	?ca:String,
+	?cert:String,
+	?key:String,
 	?topics:Array<String>,
 }
 

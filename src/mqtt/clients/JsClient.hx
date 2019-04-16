@@ -28,6 +28,9 @@ class JsClient extends BaseClient {
 						connectTimeout: config.connectTimeoutMs,
 						username: config.username,
 						password: config.password,
+						ca: config.ca,
+						cert: config.cert,
+						key: config.key,
 						reconnectPeriod: 0, // don't reconnect
 					});
 					
