@@ -118,11 +118,10 @@ class JsClient extends BaseClient {
 		return Error.withData(500, e.message, e);
 }
 
-
-#if nodejs
-@:jsRequire('mqtt')
-#else
+#if mqtt_global
 @:native('mqtt')
+#else
+@:jsRequire('mqtt')
 #end
 private extern class NativeMqtt {
 	public static function connect(url:String, ?options:{}):NativeClient;
