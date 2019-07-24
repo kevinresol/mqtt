@@ -85,9 +85,9 @@ class RunTests {
               case Success(_):
                 var count = 0;
                 var topic = 'haxe-mqtt-' + Date.now().getTime();
-                client.message.handle(function(m) {
-                  asserts.assert(m.a == topic);
-                  asserts.assert(m.b == 'after');
+                client.messageReceived.handle(function(m) {
+                  asserts.assert(m.topic == topic);
+                  asserts.assert(m.content == 'after');
                   if(++count == 3) {
                     asserts.done();
                   }
@@ -119,9 +119,9 @@ class RunTests {
               case Success(_):
                 var count = 0;
                 var topic = 'haxe-mqtt-' + Date.now().getTime();
-                client.message.handle(function(m) {
-                  asserts.assert(m.a == topic);
-                  asserts.assert(m.b == 'after');
+                client.messageReceived.handle(function(m) {
+                  asserts.assert(m.topic == topic);
+                  asserts.assert(m.content == 'after');
                   if(++count == 3) {
                     asserts.done();
                   }

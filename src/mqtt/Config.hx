@@ -29,6 +29,14 @@ abstract ConfigGenerator(Void->Promise<Config>) from Void->Promise<Config> to Vo
 		return fromUrl(url);
 	
 	@:from
+	public static inline function fromSync(config:Config):ConfigGenerator
+		return Promise.resolve.bind(config);
+	
+	@:from
+	public static inline function fromSyncFunction(f:Void->Config):ConfigGenerator
+		return function() return Promise.resolve(f());
+	
+	@:from
 	public static function fromUrl(url:Url):ConfigGenerator
 		return function():Promise<Config> return {
 			uri: Url.make({ // re-make the url without auth

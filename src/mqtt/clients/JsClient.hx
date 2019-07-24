@@ -7,6 +7,8 @@ import tink.Chunk;
 import haxe.Constraints;
 import haxe.io.Bytes;
 
+import #if haxe4 js.lib.Error #else js.Error #end as JsError;
+
 using tink.CoreApi;
 
 /**
@@ -114,7 +116,7 @@ class JsClient extends BaseClient {
 		}, false);
 	}
 	
-	static function toError(e:js.Error)
+	static function toError(e:JsError)
 		return Error.withData(500, e.message, e);
 }
 
@@ -131,8 +133,8 @@ private extern class NativeClient {
 	function on(event:String, f:Function):Void;
 	function once(event:String, f:Function):Void;
 	function removeListener(event:String, f:Function):Void;
-	function publish(topic:String, message:Message, ?options:{}, ?callback:js.Error->Void):Void;
-	function subscribe(topic:String, ?options:{}, ?callback:js.Error->Array<{topic:String, qos:QoS}>->Void):Void;
+	function publish(topic:String, message:Message, ?options:{}, ?callback:JsError->Void):Void;
+	function subscribe(topic:String, ?options:{}, ?callback:JsError->Array<{topic:String, qos:QoS}>->Void):Void;
 	function unsubscribe(topic:String, ?callback:Void->Void):Void;
 	function end(force:Bool, ?callback:Void->Void):Void;
 }

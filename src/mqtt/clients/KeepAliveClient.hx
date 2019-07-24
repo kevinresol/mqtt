@@ -31,8 +31,8 @@ class KeepAliveClient extends BaseClient {
 				case Success(_):
 					if(link != null) link.dissolve();
 					link = client.isConnected.bind(isConnectedState.set)
-						& client.message.handle(messageTrigger.trigger)
-						& client.error.handle(errorTrigger.trigger);
+						& client.messageReceived.handle(messageTrigger.trigger)
+						& client.errors.handle(errorTrigger.trigger);
 					
 					for(sub in subscriptions) switch sub {
 						case Subscribe(topic, options): client.subscribe(topic, options);
