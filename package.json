@@ -5,6 +5,6 @@
   "dependencies": {
     "find-process": "^1.1.0",
     "mosca": "^2.8.3",
-    "mqtt": "^2.9.0"
+    "mqtt": "^2.15.0"
   }
 }
