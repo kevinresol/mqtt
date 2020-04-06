@@ -53,6 +53,6 @@ abstract ConfigGenerator(Void->Promise<Config>) from Void->Promise<Config> to Vo
 
 @:forward
 abstract SubscribedTopic({topic:String, qos:QoS}) from {topic:String, qos:QoS} to {topic:String, qos:QoS} {
-	@:from public static inline function ofTopic(topic:String)
+	@:from public static inline function ofTopic(topic:String):SubscribedTopic
 		return {topic: topic, qos: null}
 }
