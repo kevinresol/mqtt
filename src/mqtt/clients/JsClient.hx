@@ -55,7 +55,7 @@ class JsClient extends BaseClient {
 						isConnectedState.set(true);
 						native.removeListener('error', onError);
 						native.removeListener('close', onClose);
-						if(config.topics != null) for(topic in config.topics) subscribe(topic);
+						if(config.topics != null) for(topic in config.topics) subscribe(topic.topic, {qos: topic.qos});
 					}
 					
 					native.once('error', onError);

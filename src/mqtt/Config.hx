@@ -14,7 +14,7 @@ typedef Config = {
 	?ca:String,
 	?cert:String,
 	?key:String,
-	?topics:Array<String>,
+	?topics:Array<SubscribedTopic>,
 }
 
 @:enum abstract Version(Int) to Int {
@@ -49,4 +49,10 @@ abstract ConfigGenerator(Void->Promise<Config>) from Void->Promise<Config> to Vo
 			username: url.auth == null ? null : url.auth.user,
 			password: url.auth == null ? null : url.auth.password,
 		};
+}
+
+@:forward
+abstract SubscribedTopic({topic:String, qos:QoS}) from {topic:String, qos:QoS} to {topic:String, qos:QoS} {
+	@:from public static inline function ofTopic(topic:String)
+		return {topic: topic, qos: null}
 }

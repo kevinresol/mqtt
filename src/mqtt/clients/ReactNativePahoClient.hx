@@ -51,7 +51,7 @@ class ReactNativePahoClient extends BaseClient {
 							});
 							client.on('connectionLost', isConnectedState.set.bind(false));
 							client.on('error', function(e) errorTrigger.trigger(Error.ofJsError(e)));
-							if(config.topics != null) for(topic in config.topics) subscribe(topic);
+							if(config.topics != null) for(topic in config.topics) subscribe(topic.topic, {qos: topic.qos});
 							cb(Success(Noise));
 						})
 						.catchError(function(e) cb(Failure(Error.ofJsError(e))));
