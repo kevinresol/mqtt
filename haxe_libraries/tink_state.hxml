@@ -1,5 +1,4 @@
-# @install: lix --silent download "https://github.com/haxetink/tink_state/archive/b42e6705304d02dd57c54ce7713d3dd999978c8b.tar.gz" into tink_state/0.5.2/github/b42e6705304d02dd57c54ce7713d3dd999978c8b
--D tink_state=0.5.2
--cp ${HAXESHIM_LIBCACHE}/tink_state/0.5.2/github/b42e6705304d02dd57c54ce7713d3dd999978c8b/src
-
 -lib tink_core
+-cp ${SCOPE_DIR}/../tink_state/src
+-D tink_state=0.11.1
+--macro Sys.println("haxe_libraries/tink_state.hxml:3: [Warning] Using dev version of library tink_state")

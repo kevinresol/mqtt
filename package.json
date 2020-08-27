@@ -3,8 +3,8 @@
     "mosca": "mosca"
   },
   "dependencies": {
-    "find-process": "^1.1.0",
+    "find-process": "^1.4.3",
     "mosca": "^2.8.3",
-    "mqtt": "^2.9.0"
+    "mqtt": "^4.2.1"
   }
 }

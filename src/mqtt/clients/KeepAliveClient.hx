@@ -4,23 +4,34 @@ import haxe.Timer;
 import mqtt.Client;
 import mqtt.Config;
 import tink.Chunk;
+import tink.state.Observable;
 
 using tink.CoreApi;
 
-class KeepAliveClient extends BaseClient {
+class KeepAliveClient implements Client {
 	
+	public var messageReceived(default, null):Signal<Message>;
+	public var errors(default, null):Signal<Error>;
+	public var isConnected(default, null):Observable<Bool>;
+	
+	var errorTrigger:SignalTrigger<Error>;
 	var subscriptions:Array<Subscription> = [];
 	var clientFactory:ConfigGenerator->Client;
 	var client:Client;
+	var getConfig:ConfigGenerator;
 	
 	public function new(getConfig, clientFactory) {
-		super(getConfig);
+		this.getConfig = getConfig;
 		this.clientFactory = clientFactory;
 	}
 	
-	override function connect():Promise<Noise> {
+	public function connect():Promise<Noise> {
 		if(client != null && client.isConnected.value) return new Error('Already connected');
 		client = clientFactory(getConfig);
+		isConnected = client.isConnected;
+		messageReceived = client.messageReceived;
+		errors = client.errors.join(errorTrigger = Signal.trigger());
+		isConnected = client.isConnected;
 		return tryConnect();
 	}
 	
@@ -30,9 +41,6 @@ class KeepAliveClient extends BaseClient {
 			switch o {
 				case Success(_):
 					if(link != null) link.dissolve();
-					link = client.isConnected.bind(isConnectedState.set)
-						& client.messageReceived.handle(messageTrigger.trigger)
-						& client.errors.handle(errorTrigger.trigger);
 					
 					for(sub in subscriptions) switch sub {
 						case Subscribe(topic, options): client.subscribe(topic, options);
@@ -55,27 +63,27 @@ class KeepAliveClient extends BaseClient {
 		});
 	}
 	
-	override function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
+	public function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
 		return Future.async(function(cb) {
 			subscriptions.push(Subscribe(topic, options));
 			whenConnected(function() client.subscribe(topic, options).handle(cb));
 		}, false);
 	}
 	
-	override function unsubscribe(topic:String):Promise<Noise> {
+	public function unsubscribe(topic:String):Promise<Noise> {
 		return Future.async(function(cb) {
 			subscriptions.push(Unsubscribe(topic));
 			whenConnected(function() client.unsubscribe(topic).handle(cb));
 		}, false);
 	}
 	
-	override function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
+	public function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
 		return Future.async(function(cb) {
 			whenConnected(function() client.publish(topic, message, options).handle(cb));
 		}, false);
 	}
 	
-	override function close(?force:Bool):Future<Noise> {
+	public function close(?force:Bool):Future<Noise> {
 		return Future.async(function(cb) {
 			whenConnected(function() client.close(force).handle(cb));
 		}, false);

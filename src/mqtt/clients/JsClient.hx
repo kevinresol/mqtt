@@ -36,7 +36,7 @@ class JsClient extends BaseClient {
 						reconnectPeriod: 0, // don't reconnect
 					});
 					
-					var onClose, onError, onConnect;
+					var onClose = null, onError = null, onConnect = null;
 					
 					onClose = function() {
 						cb(Failure(new Error('socket closed unexpectedly')));

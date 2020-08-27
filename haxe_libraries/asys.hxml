@@ -1,8 +1,6 @@
-# @install: lix --silent download "https://github.com/benmerckx/asys/archive/5ea0b3eaedf9661947d6267cb68e72f3eac2b0d6.tar.gz" into asys/0.3.0/github/5ea0b3eaedf9661947d6267cb68e72f3eac2b0d6
--D asys=0.3.0
--cp ${HAXESHIM_LIBCACHE}/asys/0.3.0/github/5ea0b3eaedf9661947d6267cb68e72f3eac2b0d6/
-
+# @install: lix --silent download "gh://github.com/benmerckx/asys#1b29a4f4fbb84bb444cc5d653f6fd778e613c028" into asys/0.4.0/github/1b29a4f4fbb84bb444cc5d653f6fd778e613c028
 -lib tink_core
--lib tink_macro
 -lib tink_io
 -lib tink_streams
+-cp ${HAXE_LIBCACHE}/asys/0.4.0/github/1b29a4f4fbb84bb444cc5d653f6fd778e613c028/src
+-D asys=0.4.0

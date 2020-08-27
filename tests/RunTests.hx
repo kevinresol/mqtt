@@ -6,6 +6,7 @@ import haxe.io.Bytes;
 import asys.io.*;
 import mqtt.clients.*;
 
+using tink.io.Source;
 using tink.CoreApi;
 
 @:asserts
