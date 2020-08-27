@@ -39,7 +39,7 @@ class KeepAliveClient extends BaseClient {
 						case Unsubscribe(topic): client.unsubscribe(topic);
 					}
 					
-					client.isConnected.nextTime(function(v) return !v)
+					client.isConnected.nextTime({butNotNow: true}, function(v) return !v)
 						.handle(function(_) {
 							client = clientFactory(getConfig);
 							tryConnect().eager();
