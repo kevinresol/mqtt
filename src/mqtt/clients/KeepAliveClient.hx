@@ -4,43 +4,52 @@ import haxe.Timer;
 import mqtt.Client;
 import mqtt.Config;
 import tink.Chunk;
-import tink.state.Observable;
+import tink.state.*;
 
 using tink.CoreApi;
 
-class KeepAliveClient implements Client {
+class KeepAliveClient extends BaseClient {
 	
-	public var messageReceived(default, null):Signal<Message>;
-	public var errors(default, null):Signal<Error>;
-	public var isConnected(default, null):Observable<Bool>;
-	
-	var errorTrigger:SignalTrigger<Error>;
 	var subscriptions:Array<Subscription> = [];
 	var clientFactory:ConfigGenerator->Client;
-	var client:Client;
-	var getConfig:ConfigGenerator;
+	var clientState:State<Client>;
+	var client(get, set):Client;
+	var link:CallbackLink;
 	
 	public function new(getConfig, clientFactory) {
-		this.getConfig = getConfig;
+		super(getConfig);
 		this.clientFactory = clientFactory;
+		this.clientState = new State(null);
+		this.isConnected = Observable.auto(() -> switch client {
+			case null: false;
+			case c: c.isConnected.value;
+		});
 	}
 	
-	public function connect():Promise<Noise> {
-		if(client != null && client.isConnected.value) return new Error('Already connected');
-		client = clientFactory(getConfig);
-		isConnected = client.isConnected;
-		messageReceived = client.messageReceived;
-		errors = client.errors.join(errorTrigger = Signal.trigger());
-		isConnected = client.isConnected;
-		return tryConnect();
+	override function connect():Promise<Noise> {
+		return switch client {
+			case null:
+				client = clientFactory(getConfig);
+				tryConnect();
+			case _:
+				new Error('Already connected');
+		}
 	}
 	
-	var link:CallbackLink;
+	inline function get_client():Client {
+		return clientState.value;
+	}
+	inline function set_client(v:Client) {
+		return clientState.set(v);
+	}
+	
 	function tryConnect(delay = 10):Promise<Noise> {
 		return client.connect().map(function(o) {
 			switch o {
 				case Success(_):
 					if(link != null) link.dissolve();
+					link = client.messageReceived.handle(messageTrigger.trigger)
+						& client.errors.handle(errorTrigger.trigger);
 					
 					for(sub in subscriptions) switch sub {
 						case Subscribe(topic, options): client.subscribe(topic, options);
@@ -63,29 +72,32 @@ class KeepAliveClient implements Client {
 		});
 	}
 	
-	public function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
+	override function subscribe(topic:String, ?options:SubscribeOptions):Promise<QoS> {
 		return Future.async(function(cb) {
 			subscriptions.push(Subscribe(topic, options));
 			whenConnected(function() client.subscribe(topic, options).handle(cb));
 		}, false);
 	}
 	
-	public function unsubscribe(topic:String):Promise<Noise> {
+	override function unsubscribe(topic:String):Promise<Noise> {
 		return Future.async(function(cb) {
 			subscriptions.push(Unsubscribe(topic));
 			whenConnected(function() client.unsubscribe(topic).handle(cb));
 		}, false);
 	}
 	
-	public function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
+	override function publish(topic:String, message:Chunk, ?options:PublishOptions):Promise<Noise> {
 		return Future.async(function(cb) {
 			whenConnected(function() client.publish(topic, message, options).handle(cb));
 		}, false);
 	}
 	
-	public function close(?force:Bool):Future<Noise> {
+	override function close(?force:Bool):Future<Noise> {
 		return Future.async(function(cb) {
-			whenConnected(function() client.close(force).handle(cb));
+			whenConnected(function() {
+				client.close(force).handle(cb);
+				client = null;
+			});
 		}, false);
 	}
 	

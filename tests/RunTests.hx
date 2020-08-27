@@ -44,12 +44,12 @@ class RunTests {
   function runBroker() {
     return killAll()
       .next(function(_) {
-        var proc = new Process('npm', ['run', 'mosca']);
-        proc.stderr.all().handle(function(o) switch o.sure().toString() {
-          case '': 
-          case v: trace(v);
-        });
+        var proc = new Process('yarn', ['mosca']);
         return Future.async(function(cb) {
+          proc.stderr.all().handle(function(o) switch o.sure().toString() {
+            case '': 
+            case v: new Error(v);
+          });
           function check() {
             Promise.ofJsPromise(js.Lib.require('find-process')('port', 1883))
               .handle(function(o) switch o {
